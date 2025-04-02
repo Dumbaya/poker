@@ -1,0 +1,55 @@
+version: "1"
+
+services:
+  frontend:
+    build: ./front
+    ports:
+      - "3000:3000"
+    depends_on:
+      - back
+    networks:
+      - poker_network
+
+  backend:
+    build: ./back
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - ai
+    environment:
+      DB_HOST: postgres
+      AI_API_URL: "http://ai:8000"
+    networks:
+      - poker_network
+
+  ai:
+    build: ./ai
+    ports:
+      - "8000:8000"
+    networks:
+      - poker_network
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: poker_db
+    ports:
+      - "5432:5432"
+    networks:
+      - poker_network
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - poker_network
+
+networks:
+  poker_network:
+    driver: bridge
