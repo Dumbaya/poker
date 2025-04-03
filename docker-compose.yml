@@ -5,9 +5,11 @@ services:
     build: ./front
     container_name: frontend
     ports:
-      - "5173:5173"
+      - "3001:3001"
     depends_on:
       - backend
+    volumes:
+      - ./front:/app
     networks:
       - poker_network
 
@@ -22,6 +24,8 @@ services:
     environment:
       DB_HOST: postgres
       AI_API_URL: "http://ai:8000"
+    volumes:
+      - ./back:/app
     networks:
       - poker_network
 
@@ -30,6 +34,8 @@ services:
     container_name: ai
     ports:
       - "8000:8000"
+    volumes:
+      - ./ai:/app
     networks:
       - poker_network
 

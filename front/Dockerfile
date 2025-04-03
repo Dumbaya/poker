@@ -9,6 +9,8 @@ RUN npm install --include=dev
 
 COPY . .
 
-EXPOSE 5173
+ENV WATCHPACK_POLLING=true
 
-CMD ["npm", "start"]
+EXPOSE 3001
+
+CMD ["sh", "-c", "npm install && PORT=3001 npm start"]
