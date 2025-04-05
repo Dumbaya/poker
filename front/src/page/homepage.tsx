@@ -10,7 +10,7 @@ function Homepage() {
 
             </div>
             <div>
-                <button onClick={() => navigate('/login')}>Login</button>
+                <button onClick={() => navigate('/sign_in')}>Sign_in</button>
             </div>
         </>
     );

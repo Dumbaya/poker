@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-function Login() {
+function Sign_in() {
     const navigate = useNavigate();
 
     const [id, setID] = useState<string>('');
@@ -22,8 +22,9 @@ function Login() {
                        placeholder={'비밀번호'}/>
                 <button type={'submit'}>로그인</button>
             </form>
+            <button onClick={() => navigate('/sign_up')}>회원가입</button>
         </div>
     );
 }
 
-export default Login;
+export default Sign_in;
