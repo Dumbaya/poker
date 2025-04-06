@@ -7,9 +7,38 @@ function Sign_in() {
     const [id, setID] = useState<string>('');
     const [password, setPassword] = useState<string>('');
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-    }
+
+        const userData = {
+            user_id: id,
+            user_password: password
+        };
+
+        try {
+            const res = await fetch('http://localhost:3000/user/sign_in', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+
+            if (res.ok){
+                const data = await res.json();
+                localStorage.setItem('sessionToken', data.token);
+
+                alert('로그인 성공!.');
+                navigate('/');
+            } else{
+                const error = await res.json();
+                alert(`로그인 실패하였습니다.: ${error.message}`);
+            }
+        } catch (err) {
+            console.log('Error', err);
+            alert('서버와 통신에 실패했습니다.');
+        }
+    };
 
     return(
         <div>
