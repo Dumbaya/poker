@@ -42,6 +42,13 @@ export class UserService {
     if (!isMatch)
       throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
 
+    const existingSessionToken = await this.redisClient.get(
+      `user_session:${user.user_id}`,
+    );
+    if (existingSessionToken) {
+      await this.redisClient.del(`session:${existingSessionToken}`);
+      await this.redisClient.del(`user_session:${user.user_id}`);
+    }
     const sessionToken = uuidv4();
 
     await this.redisClient.setex(
@@ -52,6 +59,12 @@ export class UserService {
         user_nickname: user.user_nickname,
         user_role: user.user_role,
       }),
+    );
+
+    await this.redisClient.setex(
+      `user_session:${user.user_id}`,
+      60 * 60,
+      sessionToken,
     );
 
     return { token: sessionToken };

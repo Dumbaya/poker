@@ -26,9 +26,9 @@ function Sign_in() {
 
             if (res.ok){
                 const data = await res.json();
-                localStorage.setItem('sessionToken', data.token);
+                sessionStorage.setItem('sessionToken', data.token);
 
-                alert('로그인 성공!.');
+                alert('로그인 성공!');
                 navigate('/');
             } else{
                 const error = await res.json();

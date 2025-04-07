@@ -7,7 +7,7 @@ function Homepage() {
 
     useEffect(() => {
         const checkSession = async () => {
-            const token = localStorage.getItem('sessionToken');
+            const token = sessionStorage.getItem('sessionToken');
             if (!token) {
                 alert('로그인 후 이용 가능합니다.');
                 navigate('/sign_in');
@@ -36,8 +36,17 @@ function Homepage() {
         checkSession();
     }, [navigate]);
 
-    const logout = () => {
-        localStorage.removeItem('sessionToken');
+    const logout = async () => {
+        const token = sessionStorage.getItem('sessionToken');
+        if (token) {
+            await fetch("http://localhost:3000/user/sign_out", {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+        }
+
         alert('로그아웃 되었습니다.');
         navigate('/sign_in');
     }
