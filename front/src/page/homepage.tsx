@@ -60,6 +60,9 @@ function Homepage() {
             <div>
                 <button onClick={() => logout()}>Logout</button>
             </div>
+            <div>
+                <button onClick={() => navigate('/room_list')}>게임 시작하기</button>
+            </div>
         </>
     );
 }
