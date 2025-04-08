@@ -7,9 +7,8 @@ interface RoomCreateModalProps {
 
 const RoomCreateModal: React.FC<RoomCreateModalProps> = ({ onClose, onRoomCreated }) => {
     const [roomTitle, setRoomTitle] = useState('');
-    const [hostNickname, setHostNickname] = useState('');
     const [maxPlayer, setMaxPlayer] = useState(4);
-    const [isPrivate, setIsPrivate] = useState(false);
+    const [isLock, setIsLock] = useState(false);
     const [password, setPassword] = useState('');
 
     const handleCreateRoom = async () => {
@@ -17,13 +16,13 @@ const RoomCreateModal: React.FC<RoomCreateModalProps> = ({ onClose, onRoomCreate
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': sessionStorage.getItem('sessionToken') || '',
             },
             body: JSON.stringify({
                 room_title: roomTitle,
-                host_nickname: hostNickname,
                 max_player: maxPlayer,
-                is_private: isPrivate,
-                password: isPrivate ? password : '',
+                is_locked: isLock,
+                password: isLock ? password : '',
             }),
         });
 
@@ -36,6 +35,11 @@ const RoomCreateModal: React.FC<RoomCreateModalProps> = ({ onClose, onRoomCreate
         }
     };
 
+    const chk_maxPlayer = async (e: number) => {
+        const max = Math.max(2, Math.min(6, e));
+        setMaxPlayer(max);
+    }
+
     return (
         <div style={{
             position: 'fixed', top: '50%', left: '50%',
@@ -45,13 +49,12 @@ const RoomCreateModal: React.FC<RoomCreateModalProps> = ({ onClose, onRoomCreate
         }}>
             <h2>방 만들기</h2>
             <input type="text" placeholder="방 제목" value={roomTitle} onChange={e => setRoomTitle(e.target.value)} />
-            <input type="text" placeholder="닉네임" value={hostNickname} onChange={e => setHostNickname(e.target.value)} />
-            <input type="number" placeholder="최대 인원" value={maxPlayer} onChange={e => setMaxPlayer(Number(e.target.value))} />
+            <input type="number" placeholder="최대 인원" value={maxPlayer} onChange={e => chk_maxPlayer(Number(e.target.value))}/>
             <label>
-                <input type="checkbox" checked={isPrivate} onChange={() => setIsPrivate(!isPrivate)} />
+                <input type="checkbox" checked={isLock} onChange={() => setIsLock(!isLock)} />
                 비밀방
             </label>
-            {isPrivate && (
+            {isLock && (
                 <input type="password" placeholder="비밀번호" value={password} onChange={e => setPassword(e.target.value)} />
             )}
             <br />
