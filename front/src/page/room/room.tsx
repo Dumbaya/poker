@@ -12,34 +12,38 @@ interface Room {
 
 function Room() {
     const navigate = useNavigate();
-    const [search_room, setSearch_room] = useState<string>('');
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [showModal, setShowModal] = useState<boolean>(false);
-    const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
-
-    const fetchRooms = () => {
-        fetch('http://localhost:3000/rooms/get_list')
-            .then((res) => res.json())
-            .then((data) => {
-                setRooms(data);
-                setFilteredRooms(data);
-            });
-    };
+    const [room_id, setRoom_id] = useState<string>('');
 
     useEffect(() => {
-        const filteredRooms = rooms.filter((room) =>
-            room.room_title.toLowerCase().includes(search_room.toLowerCase()));
-        setFilteredRooms(filteredRooms);
-    }, [search_room, rooms]);
+        // 예시: URL에서 roomId를 가져올 수 있다면
+        const urlParts = window.location.pathname.split('/');
+        const id = urlParts[urlParts.length - 1];
+        setRoom_id(id);
+    }, []);
 
-    const handleRoomCreate = (room_id: string) => {
-        fetchRooms();
-        navigate(`/rooms/${room_id}`);
+
+    const deleteRoom = async (room_id: string) => {
+        try{
+            const res = await fetch(`http://localhost:3000/rooms/delete/${room_id}`, {
+                method: "DELETE",
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                navigate('/room_list');
+            } else {
+                alert('방 삭제 실패: ' + data.message);
+            }
+        } catch (err) {
+            console.error('삭제 요청 실패:', err);
+            alert('서버와 통신에 실패했습니다.');
+        }
     }
 
     return(
         <div>
-            test
+            <button onClick={() => deleteRoom(room_id)}>방 나가기</button>
         </div>
     );
 }

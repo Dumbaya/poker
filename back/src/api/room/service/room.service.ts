@@ -42,6 +42,8 @@ export class RoomService {
 
     await this.redisClient.hset(key, room as any);
 
+    await this.redisClient.sadd(`${key}:users`, user.user_nickname);
+
     return room;
   }
 
@@ -55,5 +57,60 @@ export class RoomService {
       is_locked: data.is_locked === 'true',
       password: data.password ?? '',
     };
+  }
+
+  async leaveRoom(
+    roomId: string,
+    userNickname: string,
+  ): Promise<'deleted' | 'left' | 'not_found'> {
+    const key = `room:${roomId}`;
+    const userKey = `${key}:users`;
+
+    const exists = await this.redisClient.exists(key);
+    if (!exists) throw new Error('방이 존재하지 않음');
+
+    const roomData = await this.redisClient.hgetall(key);
+
+    await this.redisClient.srem(userKey, userNickname);
+
+    const currentPlayer = Number(roomData.current_player ?? 0);
+
+    if (currentPlayer <= 1) {
+      await this.redisClient.del(key);
+      await this.redisClient.del(userKey);
+      return 'deleted';
+    } else {
+      await this.redisClient.hincrby(key, 'current_player', -1);
+      return 'left';
+    }
+  }
+
+  async enterRoom(roomId: string, userNickname: string): Promise<boolean> {
+    const key = `room:${roomId}`;
+    const userKey = `room:${roomId}:users`;
+
+    const exists = await this.redisClient.exists(key);
+    if (!exists) throw new Error('방이 존재하지 않음');
+
+    const current = await this.redisClient.hget(key, 'current_player');
+    const max = await this.redisClient.hget(key, 'max_player');
+
+    if (Number(current) >= Number(max)) {
+      throw new Error('방이 가득 찼습니다.');
+    }
+
+    const added = await this.redisClient.sadd(userKey, userNickname);
+    if (added === 0) {
+      throw new Error('이미 입장한 사용자입니다.');
+    }
+
+    await this.redisClient.hincrby(key, 'current_player', 1);
+
+    return true;
+  }
+
+  async getRoomUsers(roomId: string): Promise<string[]> {
+    const userKey = `room:${roomId}:users`;
+    return this.redisClient.smembers(userKey);
   }
 }

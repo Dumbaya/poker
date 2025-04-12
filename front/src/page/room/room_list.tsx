@@ -58,6 +58,24 @@ function Room_list() {
         navigate(`/rooms/${room_id}`);
     }
 
+    const handleRoomEnter = async (room_id: string) => {
+        try{
+            const res = await fetch(`http://localhost:3000/rooms/enter/${room_id}`, {
+                method: "PATCH",
+            })
+            const data = await res.json();
+
+            if (res.ok) {
+                navigate(`/rooms/${room_id}`);
+            } else {
+                alert(data.message || '입장 실패');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('서버 오류로 입장 실패');
+        }
+    }
+
     return(
         <div>
             <input type="text" onChange={(e) => setSearch_room(e.target.value)} value={search_room} placeholder={'방 검색하기'}/>
@@ -76,7 +94,15 @@ function Room_list() {
             <ul>
                 {sortedRooms.map((room) => (
                     <li key={room.room_id}>
+                        <span>
                         {room.room_title} - {room.current_player}/{room.max_player} - {room.host_nickname}
+                        </span>
+                        <button
+                            disabled={room.current_player >= room.max_player}
+                            onClick={() => handleRoomEnter(room.room_id)}
+                        >
+                            {room.current_player >= room.max_player ? '입장 불가' : '입장'}
+                        </button>
                     </li>
                 ))}
             </ul>

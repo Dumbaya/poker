@@ -52,6 +52,7 @@ function Sign_in() {
                 <button type={'submit'}>로그인</button>
             </form>
             <button onClick={() => navigate('/sign_up')}>회원가입</button>
+            <button onClick={() => navigate('/')}>홈페이지</button>
         </div>
     );
 }

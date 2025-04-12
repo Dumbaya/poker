@@ -11,7 +11,7 @@ function Homepage() {
             if (!token) {
                 alert('로그인 후 이용 가능합니다.');
                 navigate('/sign_in');
-                return;
+                return false;
             }
 
             try {
@@ -52,18 +52,22 @@ function Homepage() {
     }
 
     return(
-        <>
-            <div>
-                <h1>Homepage</h1>
-                {nickname && <h2>환영합니다, {nickname}님!</h2>}
-            </div>
-            <div>
-                <button onClick={() => logout()}>Logout</button>
-            </div>
-            <div>
-                <button onClick={() => navigate('/room_list')}>게임 시작하기</button>
-            </div>
-        </>
+        <div>
+            {
+                <>
+                    <div>
+                        <h1>Homepage</h1>
+                        {nickname && <h2>환영합니다, {nickname}님!</h2>}
+                    </div>
+                    <div>
+                        <button onClick={() => logout()}>Logout</button>
+                    </div>
+                    <div>
+                        <button onClick={() => navigate('/room_list')}>게임 시작하기</button>
+                    </div>
+                </>
+            }
+        </div>
     );
 }
 
