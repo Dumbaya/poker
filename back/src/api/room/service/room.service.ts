@@ -100,7 +100,7 @@ export class RoomService {
     }
   }
 
-  async enterRoom(roomId: string, userNickname: string): Promise<boolean> {
+  async enterRoom(roomId: string, userNickname: string, password?: string): Promise<boolean> {
     const key = `room:${roomId}`;
     const userKey = `${key}:users`;
 
@@ -110,6 +110,14 @@ export class RoomService {
 
     const exists = await this.redisClient.exists(key);
     if (!exists) throw new Error('방이 존재하지 않음');
+
+    const isLocked = await this.redisClient.hget(key, 'is_locked');
+    if (isLocked === 'true') {
+      const realPassword = await this.redisClient.hget(key, 'password');
+      if (!password || password !== realPassword) {
+        throw new Error('비밀번호가 틀렸습니다.');
+      }
+    }
 
     const current = await this.redisClient.hget(key, 'current_player');
     const max = await this.redisClient.hget(key, 'max_player');
@@ -142,7 +150,6 @@ export class RoomService {
 
     return true;
   }
-
 
   async getRoomUsers(roomId: string): Promise<string[]> {
     const userKey = `room:${roomId}:users`;

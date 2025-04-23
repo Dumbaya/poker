@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import RoomCreateModal from "./CreateRoomModal";
+import SecretRoomModal from "./SecretRoomModal";
 
 interface Room {
     room_id: string;
@@ -8,15 +9,20 @@ interface Room {
     host_nickname: string;
     current_player: number;
     max_player: number;
+    is_locked?: boolean;
 }
 
 function Room_list() {
     const navigate = useNavigate();
     const [search_room, setSearch_room] = useState<string>('');
     const [rooms, setRooms] = useState<Room[]>([]);
-    const [showModal, setShowModal] = useState<boolean>(false);
     const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
     const [sortOption, setSortOption] = useState<'title' | 'created' | 'player'>('title');
+
+    const [showModal, setShowModal] = useState<boolean>(false);
+    const [showSecretRoomModal, setShowSecretRoomModal] = useState<boolean>(false);
+    const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+    const [selectedRoomTitle, setSelectedRoomTitle] = useState<string | null>(null);
 
     useEffect(() => {
         fetchRooms();
@@ -58,11 +64,9 @@ function Room_list() {
         navigate(`/rooms/${room_id}`);
     }
 
-    const handleRoomEnter = async (room_id: string) => {
-        try{
-            console.log('[handleRoomEnter] room_id:', room_id);
+    const handleRoomEnter = async (room_id: string, password?: string) => {
+        try {
             const sessionToken = sessionStorage.getItem('sessionToken');
-
             if (!sessionToken) {
                 alert('세션 토큰이 없습니다. 로그인 상태를 확인하세요.');
                 return;
@@ -71,9 +75,12 @@ function Room_list() {
             const res = await fetch(`http://localhost:3000/rooms/enter/${room_id}`, {
                 method: "PATCH",
                 headers: {
-                    'Authorization': sessionToken
+                    'Authorization': sessionToken,
+                    'Content-Type': 'application/json',
                 },
-            })
+                body: JSON.stringify({ password })
+            });
+
             const data = await res.json();
 
             if (res.ok) {
@@ -85,10 +92,22 @@ function Room_list() {
             console.error(err);
             alert('서버 오류로 입장 실패');
         }
-    }
+    };
+
+    const handlePasswordSubmit = (password: string) => {
+        if (selectedRoomId) {
+            handleRoomEnter(selectedRoomId, password);
+            setSelectedRoomId(null);
+            setSelectedRoomTitle(null);
+            setShowSecretRoomModal(false);
+        }
+    };
 
     return(
         <div>
+            <div>
+                <button onClick={() => navigate('/')}>홈페이지</button>
+            </div>
             <input type="text" onChange={(e) => setSearch_room(e.target.value)} value={search_room} placeholder={'방 검색하기'}/>
             <button onClick={fetchRooms}>새로고침</button>
             <select onChange={(e) => setSortOption(e.target.value as any)}>
@@ -101,16 +120,38 @@ function Room_list() {
             {showModal && (
                 <RoomCreateModal onClose={() => setShowModal(false)} onRoomCreated={handleRoomCreate} />
             )}
+            {showSecretRoomModal && selectedRoomId && (
+                <SecretRoomModal
+                    onClose={() => {
+                        setShowSecretRoomModal(false);
+                        setSelectedRoomId(null);
+                        setSelectedRoomTitle(null);
+                    }}
+                    onSubmit={handlePasswordSubmit}
+                    roomTitle={selectedRoomTitle || ''}
+                />
+            )}
 
             <ul>
                 {sortedRooms.map((room) => (
                     <li key={room.room_id}>
                         <span>
                         {room.room_title} - {room.current_player}/{room.max_player} - {room.host_nickname}
+                        {room.is_locked ? " 🔒" : ""}
                         </span>
                         <button
                             disabled={room.current_player >= room.max_player}
-                            onClick={() => handleRoomEnter(room.room_id)}
+                            onClick={() => {
+                                if (room.current_player >= room.max_player) return;
+
+                                if (room.is_locked) {
+                                    setSelectedRoomId(room.room_id);
+                                    setSelectedRoomTitle(room.room_title);
+                                    setShowSecretRoomModal(true);
+                                } else {
+                                    handleRoomEnter(room.room_id);
+                                }
+                            }}
                         >
                             {room.current_player >= room.max_player ? '입장 불가' : '입장'}
                         </button>

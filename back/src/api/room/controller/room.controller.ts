@@ -68,6 +68,7 @@ export class RoomController {
   async enterRoom(
     @Param('roomId') roomId: string,
     @Headers('Authorization') token: string,
+    @Body('password') password: string,
   ) {
     try {
       console.log('[Controller] PATCH /enter/:roomId');
@@ -75,7 +76,7 @@ export class RoomController {
       console.log('token:', token);
       const user = await this.userService.getSessionUser(token);
       console.log('user:', user);
-      await this.roomService.enterRoom(roomId, user.user_nickname);
+      await this.roomService.enterRoom(roomId, user.user_nickname, password);
       return { message: '입장 성공' };
     } catch (error: unknown) {
       if (error instanceof Error) {
