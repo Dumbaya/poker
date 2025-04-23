@@ -15,7 +15,6 @@ function Room() {
     const [room_id, setRoom_id] = useState<string>('');
 
     useEffect(() => {
-        // 예시: URL에서 roomId를 가져올 수 있다면
         const urlParts = window.location.pathname.split('/');
         const id = urlParts[urlParts.length - 1];
         setRoom_id(id);
@@ -24,13 +23,24 @@ function Room() {
 
     const deleteRoom = async (room_id: string) => {
         try{
+            const sessionToken = sessionStorage.getItem('sessionToken');
+
+            if (!sessionToken) {
+                alert('세션 토큰이 없습니다. 로그인 상태를 확인하세요.');
+                return;
+            }
+
             const res = await fetch(`http://localhost:3000/rooms/delete/${room_id}`, {
                 method: "DELETE",
+                headers: {
+                    'Authorization': sessionToken
+                },
             });
 
             const data = await res.json();
 
             if (res.ok) {
+                alert('test');
                 navigate('/room_list');
             } else {
                 alert('방 삭제 실패: ' + data.message);

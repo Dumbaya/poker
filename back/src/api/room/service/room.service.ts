@@ -14,12 +14,22 @@ export class RoomService {
 
   async getRooms() {
     const keys = await this.redisClient.keys('room:*');
-    return await Promise.all(
-      keys.map(async (key) => {
-        const data = await this.redisClient.hgetall(key);
-        return this.parseRoomInfo(data);
+
+    const roomKeys = keys.filter((key) => !key.includes(':users'));
+
+    const results = await Promise.all(
+      roomKeys.map(async (key) => {
+        try {
+          const data = await this.redisClient.hgetall(key);
+          return this.parseRoomInfo(data);
+        } catch (err) {
+          console.error(`방 정보 로딩 실패 (key: ${key}):`, err);
+          return null;
+        }
       }),
     );
+
+    return results.filter((room) => room !== null);
   }
 
   async createRoom(
@@ -49,11 +59,11 @@ export class RoomService {
 
   private parseRoomInfo(data: Record<string, string>): RoomInfo {
     return {
-      room_id: data.room_id,
-      room_title: data.room_title,
-      max_player: Number(data.max_player),
-      current_player: Number(data.current_player),
-      host_nickname: data.host_nickname,
+      room_id: data.room_id || '',
+      room_title: data.room_title || '',
+      max_player: Number(data.max_player) || 0,
+      current_player: Number(data.current_player) || 0,
+      host_nickname: data.host_nickname || '',
       is_locked: data.is_locked === 'true',
       password: data.password ?? '',
     };
@@ -69,45 +79,70 @@ export class RoomService {
     const exists = await this.redisClient.exists(key);
     if (!exists) throw new Error('방이 존재하지 않음');
 
-    const roomData = await this.redisClient.hgetall(key);
+    const removed = await this.redisClient.srem(userKey, userNickname);
+    if (removed === 0) {
+      console.warn(`${userNickname} was not in room ${roomId}`);
+    }
 
-    await this.redisClient.srem(userKey, userNickname);
+    const updatedPlayerCount = await this.redisClient.hincrby(
+      key,
+      'current_player',
+      -1,
+    );
 
-    const currentPlayer = Number(roomData.current_player ?? 0);
-
-    if (currentPlayer <= 1) {
+    if (updatedPlayerCount <= 0) {
       await this.redisClient.del(key);
       await this.redisClient.del(userKey);
+      console.log('test');
       return 'deleted';
     } else {
-      await this.redisClient.hincrby(key, 'current_player', -1);
       return 'left';
     }
   }
 
   async enterRoom(roomId: string, userNickname: string): Promise<boolean> {
     const key = `room:${roomId}`;
-    const userKey = `room:${roomId}:users`;
+    const userKey = `${key}:users`;
+
+    console.log(`[enterRoom] TRYING TO ENTER ROOM`);
+    console.log(`roomId: ${roomId}`);
+    console.log(`userNickname: "${userNickname}"`);
 
     const exists = await this.redisClient.exists(key);
     if (!exists) throw new Error('방이 존재하지 않음');
 
     const current = await this.redisClient.hget(key, 'current_player');
     const max = await this.redisClient.hget(key, 'max_player');
+    console.log(`current_player: ${current}, max_player: ${max}`);
 
     if (Number(current) >= Number(max)) {
       throw new Error('방이 가득 찼습니다.');
     }
 
-    const added = await this.redisClient.sadd(userKey, userNickname);
-    if (added === 0) {
-      throw new Error('이미 입장한 사용자입니다.');
+    const alreadyInRoom = await this.redisClient.sismember(
+      userKey,
+      userNickname,
+    );
+    console.log(`alreadyInRoom: ${alreadyInRoom}`);
+
+    if (alreadyInRoom) {
+      console.log('이미 방에 있음');
+      return true;
     }
 
-    await this.redisClient.hincrby(key, 'current_player', 1);
+    const added = await this.redisClient.sadd(userKey, userNickname);
+    console.log(`sadd 결과: ${added}`);
+
+    const newPlayerCount = await this.redisClient.hincrby(
+      key,
+      'current_player',
+      1,
+    );
+    console.log(`current_player 증가 후: ${newPlayerCount}`);
 
     return true;
   }
+
 
   async getRoomUsers(roomId: string): Promise<string[]> {
     const userKey = `room:${roomId}:users`;

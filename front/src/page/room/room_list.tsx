@@ -60,8 +60,19 @@ function Room_list() {
 
     const handleRoomEnter = async (room_id: string) => {
         try{
+            console.log('[handleRoomEnter] room_id:', room_id);
+            const sessionToken = sessionStorage.getItem('sessionToken');
+
+            if (!sessionToken) {
+                alert('세션 토큰이 없습니다. 로그인 상태를 확인하세요.');
+                return;
+            }
+
             const res = await fetch(`http://localhost:3000/rooms/enter/${room_id}`, {
                 method: "PATCH",
+                headers: {
+                    'Authorization': sessionToken
+                },
             })
             const data = await res.json();
 

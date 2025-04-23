@@ -66,15 +66,22 @@ export class UserService {
       60 * 60,
       sessionToken,
     );
-
+    console.log('로그인 완료');
     return { token: sessionToken };
   }
 
   async getSessionUser(sessionToken: string) {
-    const session = await this.redisClient.get(`session:${sessionToken}`);
-    if (!session) {
-      throw new UnauthorizedException('유효하지 않은 세션입니다.');
+    try {
+      console.log(sessionToken);
+      const session = await this.redisClient.get(`session:${sessionToken}`);
+      console.log('Redis에서 가져온 세션:', session);
+      if (!session) {
+        throw new UnauthorizedException('유효하지 않은 세션입니다.');
+      }
+      return JSON.parse(session) as SessionData;
+    } catch (error) {
+      console.error('getSessionUser 오류:', error);
+      throw error;
     }
-    return JSON.parse(session) as SessionData;
   }
 }

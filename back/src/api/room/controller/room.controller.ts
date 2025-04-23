@@ -70,7 +70,11 @@ export class RoomController {
     @Headers('Authorization') token: string,
   ) {
     try {
+      console.log('[Controller] PATCH /enter/:roomId');
+      console.log('roomId:', roomId);
+      console.log('token:', token);
       const user = await this.userService.getSessionUser(token);
+      console.log('user:', user);
       await this.roomService.enterRoom(roomId, user.user_nickname);
       return { message: '입장 성공' };
     } catch (error: unknown) {
