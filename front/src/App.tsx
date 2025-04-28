@@ -3,7 +3,7 @@ import Homepage from "./page/homepage";
 import Sign_in from "./page/user/sign_in";
 import Sign_up from "./page/user/sign_up";
 import Room_list from "./page/room/room_list";
-import Room from "./page/room/room"
+import Room from "./page/room/room_in"
 
 function App() {
   return (

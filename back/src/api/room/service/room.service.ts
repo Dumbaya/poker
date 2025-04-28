@@ -4,6 +4,7 @@ import { CreateRoomDto } from '../dto/create_room.dto';
 import { Redis } from 'ioredis';
 import { UserService } from '../../user/service/user.service';
 import { RoomInfo } from '../type/room.interface';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 @Injectable()
 export class RoomService {
@@ -100,7 +101,11 @@ export class RoomService {
     }
   }
 
-  async enterRoom(roomId: string, userNickname: string, password?: string): Promise<boolean> {
+  async enterRoom(
+    roomId: string,
+    userNickname: string,
+    password?: string,
+  ): Promise<boolean> {
     const key = `room:${roomId}`;
     const userKey = `${key}:users`;
 
@@ -111,22 +116,6 @@ export class RoomService {
     const exists = await this.redisClient.exists(key);
     if (!exists) throw new Error('방이 존재하지 않음');
 
-    const isLocked = await this.redisClient.hget(key, 'is_locked');
-    if (isLocked === 'true') {
-      const realPassword = await this.redisClient.hget(key, 'password');
-      if (!password || password !== realPassword) {
-        throw new Error('비밀번호가 틀렸습니다.');
-      }
-    }
-
-    const current = await this.redisClient.hget(key, 'current_player');
-    const max = await this.redisClient.hget(key, 'max_player');
-    console.log(`current_player: ${current}, max_player: ${max}`);
-
-    if (Number(current) >= Number(max)) {
-      throw new Error('방이 가득 찼습니다.');
-    }
-
     const alreadyInRoom = await this.redisClient.sismember(
       userKey,
       userNickname,
@@ -136,6 +125,28 @@ export class RoomService {
     if (alreadyInRoom) {
       console.log('이미 방에 있음');
       return true;
+    }
+
+    const isLocked = await this.redisClient.hget(key, 'is_locked');
+    if (isLocked === 'true') {
+      const realPassword = await this.redisClient.hget(key, 'password');
+      if (!password || password !== realPassword) {
+        console.warn(
+          `[enterRoom] 비밀번호 틀림: ${userNickname}, roomId: ${roomId}`,
+        );
+        throw new HttpException(
+          '비밀번호가 틀렸습니다.',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+    }
+
+    const current = await this.redisClient.hget(key, 'current_player');
+    const max = await this.redisClient.hget(key, 'max_player');
+    console.log(`current_player: ${current}, max_player: ${max}`);
+
+    if (Number(current) >= Number(max)) {
+      throw new Error('방이 가득 찼습니다.');
     }
 
     const added = await this.redisClient.sadd(userKey, userNickname);

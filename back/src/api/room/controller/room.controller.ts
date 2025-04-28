@@ -50,17 +50,17 @@ export class RoomController {
       );
 
       if (result === 'deleted') {
-        return { message: '방이 삭제되었습니다.' };
+        return { flag: 'success', message: '방이 삭제되었습니다.' };
       } else if (result === 'left') {
-        return { message: '방에서 나갔습니다.' };
+        return { flag: 'success', message: '방에서 나갔습니다.' };
       } else {
-        return { message: '방을 찾을 수 없습니다.' };
+        return { flag: 'fail', message: '방을 찾을 수 없습니다.' };
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
-        return { message: error.message };
+        return { flag: 'fail', message: error.message };
       }
-      return { message: '알 수 없는 오류' };
+      return { flag: 'fail', message: '알 수 없는 오류' };
     }
   }
 
@@ -77,12 +77,19 @@ export class RoomController {
       const user = await this.userService.getSessionUser(token);
       console.log('user:', user);
       await this.roomService.enterRoom(roomId, user.user_nickname, password);
-      return { message: '입장 성공' };
+      return { flag: 'success', message: '입장 성공' };
     } catch (error: unknown) {
+      console.log(error);
       if (error instanceof Error) {
-        return { message: error.message };
+        return { flag: 'fail', message: error.message };
       }
-      return { message: '알 수 없는 오류' };
+      return { flag: 'fail', message: '알 수 없는 오류' };
     }
+  }
+
+  @Get('users/:roomId')
+  async getRoomUsers(@Param('roomId') roomId: string) {
+    const users = await this.roomService.getRoomUsers(roomId);
+    return { users };
   }
 }

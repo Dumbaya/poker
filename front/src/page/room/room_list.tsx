@@ -32,7 +32,6 @@ function Room_list() {
         fetch('http://localhost:3000/rooms/get_list')
             .then((res) => res.json())
             .then((data) => {
-                console.log('받은 방 리스트:', data);
                 setRooms(data);
                 setFilteredRooms(data);
             });
@@ -82,8 +81,8 @@ function Room_list() {
             });
 
             const data = await res.json();
-
-            if (res.ok) {
+            if (data.flag === 'success') {
+                console.log(data.message);
                 navigate(`/rooms/${room_id}`);
             } else {
                 alert(data.message || '입장 실패');
