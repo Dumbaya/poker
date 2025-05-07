@@ -56,14 +56,19 @@ function Room_in() {
         setRoom_id(id);
 
         console.log(user_nickname);
-        const newSocket = io('http://localhost:3000', {
+        const newSocket = io('http://localhost:3000/chat', {
             query: { nickname: user_nickname },
         });
         setSocket(newSocket);
+        // const roomSocket = io('http://localhost:3000/room', {
+        //     query: { nickname: user_nickname },
+        // });
+        // setSocket(roomSocket);
 
         newSocket.emit("joinRoom", id);
 
         newSocket.on("userList", (userList: string[]) => {
+            console.log(userList);
             setUserList(userList);
         });
 
@@ -74,6 +79,10 @@ function Room_in() {
                 timestamp: data.timestamp,
             },]);
         });
+
+        // roomSocket.on("gameStarted", ({ room_id }) => {
+        //     navigate(`/game/${room_id}`);
+        // });
 
         return () => {
             if (newSocket) {
@@ -127,11 +136,11 @@ function Room_in() {
             setMessage('');
         }
     };
-
+    // alert('게임을 시작합니다.');
+    //         navigate(`/game/${room_id}`);
     const startGame = () => {
         if (socket) {
-            socket.emit("startGame", room_id);
-            alert('곧 게임을 시작합니다.');
+            socket.emit("startGame", {room_id});
         }
     };
 

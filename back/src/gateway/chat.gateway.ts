@@ -9,6 +9,7 @@ import {
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
+  namespace: '/chat',
   cors: {
     origin: '*',
   },
@@ -75,6 +76,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private updateUserList(roomId: string) {
+    if (!this.server || !this.server.sockets || !this.server.sockets.adapter) {
+      console.warn('Socket server is not initialized yet.');
+      return;
+    }
+
     const clients = this.server.sockets.adapter.rooms.get(roomId);
     const userList = clients
       ? Array.from(clients).map((id) => {
